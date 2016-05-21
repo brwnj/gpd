@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<organismDownloads name="xx">
+<folder name="folder 1">
+<file label="MetaT" filename="README.txt" size="3 KB" sizeInBytes="3338" timestamp="xxx" url="/ext-api/downloads/get_tape_file?blocking=true&amp;url=/Hof3nscriptome_21/download/_JAMO/55c497110d87855594c288e8/README.txt" project="xx" library="" md5="9e590f803fa466f8fe381b835b1de90d" />
+</folder>
+<folder name="folder 2">
+<file label="MetaT" filename="geneCaller.versions" size="308 bytes" sizeInBytes="308" timestamp="xxx" url="/ext-api/downloads/get_tape_file?blocking=true&amp;url=/Hof3nscriptome_21/download/_JAMO/55e202fe0d878556782dadbb/68489.geneCaller.versions" project="xx" library="" md5="49b29b11d87a317ead56f86eed91da82" />
+<file label="MetaT" filename="assembled.faa.KO" size="2 MB" sizeInBytes="2189915" timestamp="xxx" url="/ext-api/downloads/get_tape_file?blocking=true&amp;url=/Hof3nscriptome_21/download/_JAMO/55e202fd0d878556782dadba/68489.assembled.faa.KO" project="xx" library="" md5="8c3aa862d1dadcc847627cc8e38226f9" />
+<file label="MetaT" filename="assembled.faa.EC" size="1 MB" sizeInBytes="1091949" timestamp="xxx" url="/ext-api/downloads/get_tape_file?blocking=true&amp;url=/Hof3nscriptome_21/download/_JAMO/55e202fe0d878556782dadbd/68489.assembled.faa.EC" project="xx" library="" md5="2c762474666661050091acbc5b4014f0" />
+</folder>
+</organismDownloads>
