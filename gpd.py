@@ -103,9 +103,9 @@ def download_link(cookie, link_dict, output_dir=".", retries=5, overwrite=False)
                 return (output_file, link_dict['md5'])
             except sp.CalledProcessError:
                 tries += 1
-                time.sleep(tries * 10)
                 if tries > retries:
                     return "", ""
+                time.sleep(tries * 10)
 
 
 def handle_download(links, cookie, output_dir, retries, overwrite, threads):
