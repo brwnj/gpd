@@ -1,6 +1,8 @@
 # JGI Genome Portal Downloader
 
-Yep, you _could_ probably use [Globus](https://www.globus.org/), but if you can't or don't want to you can download from the XML. This script simply makes the `curl` calls for you.
+Yep, you _could_ probably use [Globus](https://www.globus.org/), but if you
+can't or don't want to you can download from the XML. This script simply makes
+the `curl` calls for you.
 
 ## Getting the XML
 

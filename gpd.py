@@ -5,6 +5,7 @@ import multiprocessing
 import os
 import subprocess as sp
 import sys
+import time
 from functools import partial
 from xml.etree import cElementTree as ET
 
@@ -66,7 +67,7 @@ def links_from_xml(xml):
     return links
 
 
-def download_link(cookie, link_dict, output_dir=".", retry=5, overwrite=False):
+def download_link(cookie, link_dict, output_dir=".", retries=5, overwrite=False):
     """Builds and executes the download command. It will also create the file
     output dir and parent folder it lies in on the Genome Portal.
 
@@ -74,7 +75,7 @@ def download_link(cookie, link_dict, output_dir=".", retry=5, overwrite=False):
         cookie (str): file path to cookie file
         link_dict (dict): entry dictionary from :func:`links_from_xml`
         output_dir (Optional[str]): file path to dir in which to write
-        retry (Optional[int]): number of `curl` retries
+        retries (Optional[int]): number of `curl` retries
         overwrite (Optional[boolean]): whether or not to overwrite existing local file
 
     Returns:
@@ -87,27 +88,34 @@ def download_link(cookie, link_dict, output_dir=".", retry=5, overwrite=False):
         output_dir = os.path.join(os.path.abspath(output_dir))
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, link_dict['filename'])
-    exists = False
     if os.path.exists(output_file) and not overwrite:
-        logging.info("File %s exists already and will not be re-downloaded. MD5 validation will still occur." % output_file)
-        exists = True
+        logging.debug("File exists: %s" % output_file)
+        return (output_file, link_dict['md5'])
     else:
         logging.debug('Downloading %s.', link_dict['filename'])
         cmd = ("curl 'http://genome.jgi.doe.gov{url}' -b {cookie} -s "
-               "--retry {retry} > {file}").format(url=link_dict['url'],
-               cookie=cookie, retry=retry, file=output_file)
-        sp.check_call(cmd, shell=True)
-    return (output_file, link_dict['md5'])
+               "--retry {retries} > {file}").format(url=link_dict['url'],
+               cookie=cookie, retries=retries, file=output_file)
+        tries = 0
+        while True:
+            try:
+                sp.check_call(cmd, shell=True)
+                return (output_file, link_dict['md5'])
+            except sp.CalledProcessError:
+                tries += 1
+                time.sleep(tries * 10)
+                if tries > retries:
+                    return "", ""
 
 
-def handle_download(links, cookie, output_dir, retry, overwrite, threads):
+def handle_download(links, cookie, output_dir, retries, overwrite, threads):
     """Downloads links across threads as simultaneous downloads.
 
     Args:
         links (list): list of dict entries from :func:`links_from_xml`
         cookie (str): file path to cookie
         output_dir (str): dir path where to write new files
-        retry (int): number of `curl` retries
+        retries (int): number of `curl` retries
         overwrite (boolean): whether or not to overwrite existing local files
         threads (int): number of simultaneous downloads
 
@@ -116,7 +124,7 @@ def handle_download(links, cookie, output_dir, retry, overwrite, threads):
     """
     pool = multiprocessing.Pool(processes=threads)
     download = partial(download_link, cookie, output_dir=output_dir,
-                       retry=retry, overwrite=overwrite)
+                       retries=retries, overwrite=overwrite)
     download_results = pool.map(download, links)
     pool.close()
     pool.join()
@@ -126,6 +134,8 @@ def handle_download(links, cookie, output_dir, retry, overwrite, threads):
 def md5(fname):
     # https://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
     hash_md5 = hashlib.md5()
+    if not os.path.exists(fname):
+        return None
     with open(fname, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
@@ -188,11 +198,11 @@ def validate_results(results, threads):
 @click.option("-o", "--output", default=".", help="optional output dir")
 @click.option("--overwrite", is_flag=True, default=False, show_default=True,
               help="overwrite existing downloaded files")
-@click.option("--retry", default=5, type=int, show_default=True,
+@click.option("--retries", default=5, type=int, show_default=True,
               help="number of download retries if there is an error")
 @click.option("-t", "--threads", default=12, type=int, show_default=True,
               help="number of simultaneous download threads")
-def gpd(xml, username, password, output, overwrite, retry, threads):
+def gpd(xml, username, password, output, overwrite, retries, threads):
     """Logs into JGI Genome Portal and downloads links from
     'Open Downloads as XML' XML file. Files are written into `output`/JGI
     folder name.
@@ -212,7 +222,7 @@ def gpd(xml, username, password, output, overwrite, retry, threads):
     links = links_from_xml(xml)
     logging.info("Found %s files to download." % len(links))
     logging.info("Downloading...")
-    download_results = handle_download(links, cookie, output, retry,
+    download_results = handle_download(links, cookie, output, retries,
                                        overwrite, threads)
     logging.info("Downloaded %d files." % len(download_results))
     md5_results = validate_results(download_results, threads)
