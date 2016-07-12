@@ -34,6 +34,8 @@ $ gpd --threads 8 -o tmp test.xml 'brwnj' 'passwrd'
 [2016-05-21 11:57:01 - INFO] 4 files validated.
 ```
 
+Files that do not have an md5 will always show as validated.
+
 ## Help
 
 ```
