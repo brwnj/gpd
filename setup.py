@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='gpd',
-    version='1.0.0',
+    version='1.0.1',
     url='http://github.com/brwnj/gpd',
     license='MIT',
     author='Joe Brown',

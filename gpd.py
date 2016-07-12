@@ -90,7 +90,7 @@ def download_link(cookie, link_dict, output_dir=".", retries=5, overwrite=False)
     output_file = os.path.join(output_dir, link_dict['filename'])
     if os.path.exists(output_file) and not overwrite:
         logging.debug("File exists: %s" % output_file)
-        return (output_file, link_dict['md5'])
+        return (output_file, link_dict.get('md5', ''))
     else:
         logging.debug('Downloading %s.', link_dict['filename'])
         cmd = ("curl 'http://genome.jgi.doe.gov{url}' -b {cookie} -s "
@@ -100,7 +100,7 @@ def download_link(cookie, link_dict, output_dir=".", retries=5, overwrite=False)
         while True:
             try:
                 sp.check_call(cmd, shell=True)
-                return (output_file, link_dict['md5'])
+                return (output_file, link_dict.get('md5', ''))
             except sp.CalledProcessError:
                 tries += 1
                 if tries > retries:
@@ -152,7 +152,8 @@ def check_md5(tpl):
         tuple of file path and test status
     """
     path, remote_md5 = tpl
-    if remote_md5 != md5(path):
+    # some files do not have md5 calculated
+    if remote_md5 and remote_md5 != md5(path):
         return path, False
     else:
         return path, True
