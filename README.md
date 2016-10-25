@@ -32,6 +32,12 @@ macOS:
 /Users/brwnj/Library/Application Support/gpd/config.ini
 ```
 
+Linux:
+
+```
+/home/brwnj/.config/gpd/config.ini
+```
+
 The config looks like:
 
 ```
