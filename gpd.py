@@ -1,4 +1,5 @@
 import click
+import configparser
 import hashlib
 import logging
 import multiprocessing
@@ -8,6 +9,36 @@ import sys
 import time
 from functools import partial
 from xml.etree import cElementTree as ET
+
+
+def read_config(config=None):
+    if config is None:
+        cfg = os.path.join(click.get_app_dir('gpd'), 'config.ini')
+    else:
+        cfg = os.path.abspath(config)
+    if not os.path.exists(cfg):
+        logging.critical("Config file not present. Checked: %s" % cfg)
+        sys.exit(1)
+    parser = configparser.RawConfigParser()
+    parser.read([cfg])
+    rv = {}
+    jgi_present = False
+    username_present = False
+    password_present = False
+    for section in parser.sections():
+        if section.lower() == "jgi":
+            jgi_present = True
+        for key, value in parser.items(section):
+            if key.lower() == "username":
+                username_present = True
+            elif key.lower() == "password":
+                password_present = True
+            rv['%s.%s' % (section.lower(), key.lower())] = value
+    if jgi_present and username_present and password_present:
+        return rv
+    else:
+        logging.critical("The configuration file (%s) is improperly formatted. See --help." % cfg)
+        sys.exit(1)
 
 
 def set_cookie(username, password, output):
@@ -194,8 +225,7 @@ def validate_results(results, threads):
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.argument("xml")
-@click.argument("username")
-@click.argument("password")
+@click.option("-c", "--configfile", help="configuration file defining username and password")
 @click.option("-o", "--output", default=".", help="optional output dir")
 @click.option("--overwrite", is_flag=True, default=False, show_default=True,
               help="overwrite existing downloaded files")
@@ -203,10 +233,20 @@ def validate_results(results, threads):
               help="number of download retries if there is an error")
 @click.option("-t", "--threads", default=12, type=int, show_default=True,
               help="number of simultaneous download threads")
-def gpd(xml, username, password, output, overwrite, retries, threads):
+def gpd(xml, configfile, output, overwrite, retries, threads):
     """Logs into JGI Genome Portal and downloads links from
     'Open Downloads as XML' XML file. Files are written into `output`/JGI
     folder name.
+
+    A configuration file is required and can either be placed in your
+    application directory or specified each time on the command line.
+
+    It looks like:
+
+        \b
+        [jgi]
+        username:exampleuser
+        password:examplepassword
     """
     logging.basicConfig(level=logging.INFO,
                         format="[%(asctime)s - %(levelname)s] %(message)s",
@@ -214,11 +254,11 @@ def gpd(xml, username, password, output, overwrite, retries, threads):
     if threads < 1:
         logging.warn("Setting `threads` to 1.")
         threads = 1
-
+    cfg = read_config(configfile)
     output = os.path.abspath(output)
     os.makedirs(output, exist_ok=True)
     logging.info("Logging into http://genome.jgi.doe.gov")
-    cookie = set_cookie(username, password, output)
+    cookie = set_cookie(cfg['jgi.username'], cfg['jgi.password'], output)
     logging.info("Parsing %s for URLs." % xml)
     links = links_from_xml(xml)
     logging.info("Found %s files to download." % len(links))
